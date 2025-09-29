@@ -3,13 +3,18 @@ from utils import distance
 from copy import deepcopy
 from collections import defaultdict
 from random import randint
+from random import seed
 from time import time
 
 class Solver:
-    def __init__(self, instance: Instance):
+    def __init__(self, instance: Instance, random_seed:int = None):
         self.instance = instance
         self.current_solution = self.generate_initial_solution()
         self.current_solution_value = self.evaluate_solution(self.current_solution)
+        
+        if random_seed:
+            seed(random_seed)
+        
 
     ###########################
     #   Local Search Methods  #
@@ -37,13 +42,15 @@ class Solver:
                     
         return (first_idx, second_idx)
                         
-    def first_improvement(self, max_tries = 1000) -> bool:
+    def first_improvement(self, max_tries = 5000) -> bool:
         new_value = self.current_solution_value
 
-        while(new_value >= self.current_solution_value):    
+        while(new_value >= self.current_solution_value and max_tries > 0):    
             delta = self.shake()
             new_value = self.evaluate_solution_delta(self.current_solution, delta)
             max_tries -= 1
+            if max_tries % 1000 == 0:
+                print(f"First improvement tries left: {max_tries}")
 
         if max_tries > 0:
             self.swap(delta[0], delta[1])
