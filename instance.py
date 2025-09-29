@@ -2,12 +2,9 @@
 class Instance:
     num_temples: int                         # T
     num_prerequisites: int                   # P
-    temples: list[tuple[int, int]]           # List of (Xt, Yt) coordinates of temples (this is only used for distance calculations)
-    prerequisites: list[tuple[int, int]]     # List of (A, B) pairs where A is prerequisite for B
 
-    prerequisites_map = dict[int, list[int]] # Map of temple index to list of prerequisite temple indices
-                                             # Use this to look up prerequisites more efficiently
-                                             # Each value here refers to the index of the temple in the `temples` list
+    temples: dict[int, tuple[int, int]]  # temple_id -> (x, y)
+    prerequisites: dict[int, list[int]]  # temple_id -> [prerequisite_temple_ids]
 
     def __init__(self, file_path: str):
         """Load instance data from a file."""
@@ -20,22 +17,26 @@ class Instance:
         self.num_prerequisites = int(lines[1 + self.num_temples])
 
         print(f"Loading {self.num_temples} temples...")
-        self.temples = [tuple(map(int, lines[i + 1].split())) # split the line into two integers
-                        for i in range(self.num_temples)]     # and use map to convert them to int
+        self.temples = {i + 1 : tuple(map(int, lines[i + 1].split())) # split the line into two 'integers'
+                        for i in range(self.num_temples)}         # and use map to convert them to int
+        
+        #for entry in self.temples.items():
+        #    print(entry)
 
         print(f"Loading {self.num_prerequisites} prerequisites...")
-        self.prerequisites = [ tuple(map(int, lines[i + 2 + self.num_temples].split())) 
-                              for i in range(self.num_prerequisites)]
-
-        print("Mapping prerequisites...")
-        self.prerequisites_map = {i : [] for i in range(1, len(self.temples) + 1)}
-        for src, dst in self.prerequisites:
-            self.prerequisites_map[dst].append(src)
+        self.prerequisites = {t : [] for t in self.temples}
+        
+        for i in range(self.num_prerequisites):
+            src, dst = map(int, lines[i + 2 + self.num_temples].split())
+            self.prerequisites[dst].append(src)
 
         print("Instance loaded successfully.")
         
-    def get_temple(self, i:int) -> list[tuple[int, int]]:
-        return self.temples[i - 1] # -1 because temples are 1-indexed in the input file
+    def get_temples(self) -> list[int]:
+        return list(self.temples.keys())
+        
+    def get_temple(self, i:int) -> tuple[int, int]:
+        return self.temples[i] # returns (x, y)
 
-    def get_prerequisites_for(self, temple:int) -> list[int]:
-        return self.prerequisites_map.get(temple)
+    def get_prerequisites_for(self, t:int) -> list[int]:
+        return self.prerequisites.get(t)

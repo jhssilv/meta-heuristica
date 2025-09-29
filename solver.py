@@ -1,9 +1,13 @@
 from instance import Instance
 from utils import distance
+from copy import deepcopy
+from collections import defaultdict
+
 
 class Solver:
     def __init__(self, instance: Instance):
         self.instance = instance
+        self.current_solution = self.generate_initial_solution()
 
     ###########################
     #   Local Search Methods  #
@@ -19,31 +23,35 @@ class Solver:
     #   First Solution Generation  #
     ################################
     
-    # Topological sort approach [https://en.wikipedia.org/wiki/Topological_sorting]
+    # Topological sort approach with Kahn's algorithm [https://en.wikipedia.org/wiki/Topological_sorting]
     def generate_initial_solution(self) -> list[int]:    
-        no_prereqs_idx = [] 
+        prerequisites = deepcopy(self.instance.prerequisites)
+        temples = self.instance.get_temples()
+
+        # build reverse graph: t -> [who depends on t]
+        dependents = defaultdict(list)
+        for t, prereqs in prerequisites.items():
+            for p in prereqs:
+                dependents[p].append(t)
+
+        # initial list of all temples without prerequisites
+        no_prereqs = [t for t in temples if not prerequisites[t]]
         sol = []
-        
-        initial_temple_idx = None
-  
-        # Search for a temple with no prerequisites to start with      
-        for i in range(1, len(self.instance.temples) + 1):
-            if self.instance.get_prerequisites_for(i) == []:
-                no_prereqs_idx.append(i)
-        
-        while no_prereqs_idx:
-            current = no_prereqs_idx.pop()
+
+        while no_prereqs:
+            current = no_prereqs.pop()
             sol.append(current)
-            
-            for neighbor in range(1, len(self.instance.temples) + 1):
-                if current in self.instance.get_prerequisites_for(neighbor):  # This can be optimized if we create
-                    self.instance.prerequisites_map[neighbor].remove(current) # a map from temple to its dependents
-                    if self.instance.get_prerequisites_for(neighbor) == []:
-                        no_prereqs_idx.append(neighbor)
-            
-            
+
+            for dep in dependents[current]:
+                prerequisites[dep].remove(current)
+                if not prerequisites[dep]:
+                    no_prereqs.append(dep)
+
+        if len(sol) != self.instance.num_temples:
+            print(f"Initial solution does not contain all temples. ({len(sol)} / {self.instance.num_temples})")
+
         return sol
-    
+
     
     ###########################
     #   Solution Evaluation   #
@@ -54,6 +62,8 @@ class Solver:
     Returns: int: The total distance of the path
     
     Check if solution is valid BEFORE calling this function
+    
+    TODO: Implement memorization to avoid recalculating distances
     
     """
     def evaluate_solution(self, solution: list[int]) -> int:
@@ -74,20 +84,22 @@ class Solver:
     Returns: bool: Whether the solution is viable
     """
     def is_solution_viable(self, solution: list[int]) -> bool:
-        visited = dict.fromkeys(range(1,self.instance.num_temples + 1), False)
+        visited = dict.fromkeys(self.instance.get_temples(), False)
 
-        if self.instance.prerequisites_map[solution[0]] != []:
+        if self.instance.get_prerequisites_for(solution[0]) != []:
+            print(f"First temple {solution[0]} has prerequisites.")
             return False
         else:
             visited[solution[0]] = True
 
         for temple in solution[1:]:
-            for prereq in self.instance.prerequisites_map[temple]:
+            for prereq in self.instance.get_prerequisites_for(temple):
                 if not visited[prereq]:
                     print(f"Temple {temple} visited before its prerequisite {prereq}.")
                     return False
             visited[temple] = True
             
+        print('\n')
         if not all(visited.values()):
             for temple, was_visited in visited.items():
                 if not was_visited:
@@ -95,7 +107,7 @@ class Solver:
             return False            
         
         return True
-
+    
     ######################################
     # VNS (Variable Neighborhood Search) #
     ######################################
