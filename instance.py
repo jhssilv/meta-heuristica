@@ -38,4 +38,4 @@ class Instance:
         return self.temples[i - 1] # -1 because temples are 1-indexed in the input file
 
     def get_prerequisites_for(self, temple:int) -> list[int]:
-        return self.prerequisites_map.get(self.get_temple(temple))
+        return self.prerequisites_map.get(temple)
