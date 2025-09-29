@@ -18,9 +18,16 @@ if __name__ == "__main__":
 
     start_time = time.time()
     for i in range(max_iter):
-        solver.first_improvement()
-        
+        if i % 100 == 0 and i > 0:
+            print(f"Iteration {i} / {max_iter}...")
+        success = solver.first_improvement()
+
+        if not success:
+            break
+
     final_value = solver.evaluate_solution(solver.current_solution)
+
     print(f"Final solution value: {final_value}")
+    print(f"Final solution validity: {solver.is_solution_viable(solver.current_solution)}")
     print(f"Done {i+1} iterations in {time.time() - start_time:.2f} seconds.")
     

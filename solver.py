@@ -3,6 +3,7 @@ from utils import distance
 from copy import deepcopy
 from collections import defaultdict
 from random import randint
+from time import time
 
 class Solver:
     def __init__(self, instance: Instance):
@@ -27,24 +28,28 @@ class Solver:
             sol_second = self.current_solution[second_idx]
 
             for i in range(first_idx, second_idx):
+                swap_is_valid = True
+                # if anything that depends on B comes after A or anything that B depends on comes after A, break
                 if sol_first in self.instance.get_prerequisites_for(self.current_solution[i]) or \
                     self.current_solution[i] in self.instance.get_prerequisites_for(sol_second):
+                        swap_is_valid = False
                         break
-                else:
-                    swap_is_valid = True
-                    break
                     
         return (first_idx, second_idx)
                         
-    def first_improvement(self):
-        
+    def first_improvement(self, max_tries = 1000) -> bool:
         new_value = self.current_solution_value
-        
+
         while(new_value >= self.current_solution_value):    
             delta = self.shake()
             new_value = self.evaluate_solution_delta(self.current_solution, delta)
+            max_tries -= 1
 
-        self.swap(delta[0], delta[1])
+        if max_tries > 0:
+            self.swap(delta[0], delta[1])
+            return True
+        
+        return False
 
     def best_improvement(self):
         pass
