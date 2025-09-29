@@ -1,5 +1,5 @@
 from instance import Instance
-import numpy as np
+from utils import distance
 
 class Solver:
     def __init__(self, instance: Instance):
@@ -15,6 +15,25 @@ class Solver:
     def best_improvement(self):
         pass
     
+    ################################
+    #   First Solution Generation  #
+    ################################
+    
+    def generate_initial_solution(self) -> list[int]:    
+        initial_temple_idx = None
+  
+        # Search for a temple with no prerequisites to start with      
+        for i in range(len(self.instance.temples)):
+            if self.instances.prerequisites_map[i] == []:
+                initial_temple_idx = i
+                break        
+        
+        
+              
+            
+    
+    
+    
     ###########################
     #   Solution Evaluation   #
     ###########################
@@ -27,14 +46,11 @@ class Solver:
     
     """
     def evaluate_solution(self, solution: list[int]) -> int:
-        
-        def distance(src: tuple[int, int], dst: tuple[int, int]) -> int:
-            return np.floor(np.linalg.norm(np.array(src) - np.array(dst)) * 100)
-
         return sum(
             distance(
-                self.instance.temples[solution[i]], 
-                self.instance.temples[solution[i+1]]) 
+                self.instance.get_temple(solution[i]), 
+                self.instance.get_temple(solution[i+1])
+            )
             for i in range(len(solution) - 1)
             )
 

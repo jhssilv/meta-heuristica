@@ -28,8 +28,14 @@ class Instance:
                               for i in range(self.num_prerequisites)]
 
         print("Mapping prerequisites...")
-        self.prerequisites_map = dict.fromkeys(range(self.num_temples), [])
+        self.prerequisites_map = {i : [] for i in range(1, len(self.temples) + 1)}
         for src, dst in self.prerequisites:
             self.prerequisites_map[dst].append(src)
 
         print("Instance loaded successfully.")
+        
+    def get_temple(self, i:int) -> list[tuple[int, int]]:
+        return self.temples[i - 1] # -1 because temples are 1-indexed in the input file
+
+    def get_prerequisites_for(self, temple:int) -> list[int]:
+        return self.prerequisites_map.get(self.get_temple(temple))
