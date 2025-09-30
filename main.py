@@ -2,7 +2,6 @@
 from instance import Instance
 from input_parse import parse_args
 from solver import Solver
-import time
 
 
 if __name__ == "__main__":
@@ -15,12 +14,8 @@ if __name__ == "__main__":
     
     initial_value = solver.evaluate_solution(solver.current_solution)
     print(f"Initial solution value: {initial_value}")
+    print(f"initial solution is viable: {solver.is_solution_viable(solver.current_solution)}")
 
-    start_time = time.time()
-    for i in range(max_iter):
-        solver.first_improvement()
-        
-    final_value = solver.evaluate_solution(solver.current_solution)
-    print(f"Final solution value: {final_value}")
-    print(f"Done {i+1} iterations in {time.time() - start_time:.2f} seconds.")
-    
+    solver.run(max_iter)
+
+    print(f"After exchange, solution is viable: {solver.is_solution_viable(solver.current_solution)}")
