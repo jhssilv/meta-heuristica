@@ -1,8 +1,8 @@
-
+import time
 from instance import Instance
 from input_parse import parse_args
-from solver import Solver
-
+# from solver import Solver
+from super_solver import Solver
 
 if __name__ == "__main__":
     args = parse_args()
@@ -14,8 +14,13 @@ if __name__ == "__main__":
     
     initial_value = solver.evaluate_solution(solver.current_solution)
     print(f"Initial solution value: {initial_value}")
-    print(f"initial solution is viable: {solver.is_solution_viable(solver.current_solution)}")
+    print(f"Initial solution is viable: {solver.is_solution_viable(solver.current_solution)}")
+
+    start_time = time.perf_counter()
 
     solver.run(max_iter)
 
-    print(f"After exchange, solution is viable: {solver.is_solution_viable(solver.current_solution)}")
+    end_time = time.perf_counter()
+
+    print(f"\nSolver execution time: {end_time - start_time:.2f} seconds")
+    print(f"Final solution is viable: {solver.is_solution_viable(solver.best_solution)}")
