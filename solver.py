@@ -15,7 +15,7 @@ class Solver:
         
         coords = np.array([self.instance.temples[tid] for tid in self.temple_ids])
 
-        self.dist_matrix = squareform(pdist(coords, 'euclidean')).astype(float)
+        self.dist_matrix = np.floor(squareform(pdist(coords, 'euclidean')) * 100)
 
         initial_solution_ids = self.generate_initial_solution()
         self.current_solution = np.array([self.temple_id_to_idx[tid] for tid in initial_solution_ids], dtype=int)
@@ -142,20 +142,59 @@ class Solver:
         current_sol = solution.copy()
         current_value = self.evaluate_solution(current_sol)
         
+        n = len(current_sol)
         neighbors_generator = self.neighborhoods[k - 1]
 
         while True:
             improved = False
-            for i, j in neighbors_generator(current_sol):
-                current_sol[[i, j]] = current_sol[[j, i]]
-                new_value = self.evaluate_solution(current_sol)
+            best_delta = 0
+            best_swap = None
 
-                if new_value < current_value:
-                    current_value = new_value
+            for i, j in neighbors_generator(current_sol):
+                if i > j: i, j = j, i
+
+                node_i, node_j = current_sol[i], current_sol[j]
+                delta = 0
+
+                if j == i + 1:
+                # --- CASO 1: Nós adjacentes ---
+                # Tratando casos de borda (início e fim da rota)
+                    if i == 0: # Troca no início
+                        cost_before = self.dist_matrix[node_j, current_sol[j+1]]
+                        cost_after = self.dist_matrix[node_i, current_sol[j+1]]
+                    elif j == n - 1: # Troca no fim
+                        cost_before = self.dist_matrix[current_sol[i-1], node_i]
+                        cost_after = self.dist_matrix[current_sol[i-1], node_j]
+                    else: # Troca no meio
+                        cost_before = self.dist_matrix[current_sol[i-1], node_i] + self.dist_matrix[node_j, current_sol[j+1]] if i > 0 and j < n - 1 else 0
+                        cost_after = self.dist_matrix[current_sol[i-1], node_j] + self.dist_matrix[node_i, current_sol[j+1]] if i > 0 and j < n - 1 else 0
+
+                    delta = cost_after - cost_before
+                else:
+                    # --- CASO 2: Nós não-adjacentes ---
+
+                    # Tratando casos de borda
+                    if i == 0:
+                        cost_removed = self.dist_matrix[node_i, current_sol[i+1]] + self.dist_matrix[current_sol[j-1], node_j] + self.dist_matrix[node_j, current_sol[j+1]]
+                        cost_added = self.dist_matrix[node_j, current_sol[i+1]] + self.dist_matrix[current_sol[j-1], node_i] + self.dist_matrix[node_i, current_sol[j+1]]
+                    elif j == n - 1:
+                        cost_removed = self.dist_matrix[current_sol[i-1], node_i] + self.dist_matrix[node_i, current_sol[i+1]] + self.dist_matrix[current_sol[j-1], node_j]
+                        cost_added = self.dist_matrix[current_sol[i-1], node_j] + self.dist_matrix[node_j, current_sol[i+1]] + self.dist_matrix[current_sol[j-1], node_i]
+                    else:
+                        cost_removed = self.dist_matrix[current_sol[i-1], node_i] + self.dist_matrix[node_i, current_sol[i+1]] + \
+                                    self.dist_matrix[current_sol[j-1], node_j] + self.dist_matrix[node_j, current_sol[j+1]]
+                        
+                        cost_added =  self.dist_matrix[current_sol[i-1], node_j] + self.dist_matrix[node_j, current_sol[i+1]] + \
+                                    self.dist_matrix[current_sol[j-1], node_i] + self.dist_matrix[node_i, current_sol[j+1]]
+                    
+                    delta = cost_added - cost_removed
+
+                if delta < 0:
+                    # Encontrou a primeira melhora, aplica a troca e reinicia a busca
+                    current_sol[[i, j]] = current_sol[[j, i]]
+                    current_value += delta
                     improved = True
                     break
-                else:
-                    current_sol[[i, j]] = current_sol[[j, i]]
             
             if not improved:
                 break
@@ -229,6 +268,9 @@ class Solver:
         iter_count = 0
         max_k = len(self.neighborhoods)
 
+        # Show initial solution
+        self.print_solution_details(self.current_solution, "Initial Solution")
+
         while iter_count < max_iter:
             k = 1
             while k <= max_k:
@@ -256,6 +298,7 @@ class Solver:
         
         final_solution_ids = [self.temple_ids[i] for i in self.best_solution]
         print(f"\nFinished. Best solution value: {self.best_solution_value:.2f}")
+        self.print_solution_details(self.best_solution, "Final Best Solution")
     
     ################################
     #   First Solution Generation  #
@@ -280,3 +323,40 @@ class Solver:
         if len(sol) != self.instance.num_temples:
             raise Exception("Could not generate a valid initial solution. Check for cycles in prerequisites.")
         return sol
+    
+    def print_solution_details(self, solution_indices: np.ndarray, title: str = "Solution"):
+        """
+        Prints detailed information about a solution in a readable format.
+        """
+        solution_ids = [self.temple_ids[i] for i in solution_indices]
+        solution_value = self.evaluate_solution(solution_indices)
+        is_valid = self.is_solution_viable(solution_indices)
+        
+        print(f"\n{'='*50}")
+        print(f"{title.upper()}")
+        print(f"{'='*50}")
+        print(f"Value: {solution_value:.2f}")
+        print(f"Valid: {is_valid}")
+        print(f"Number of temples: {len(solution_ids)}")
+        
+        print(f"\nVisit Order:")
+        print("-" * 30)
+        for i, temple_id in enumerate(solution_ids, 1):
+            coords = self.instance.temples[temple_id]
+            prereqs = self.instance.get_prerequisites_for(temple_id)
+            prereq_str = f" (after: {prereqs})" if prereqs else " (no prereqs)"
+            print(f"{i:3d}. Temple {temple_id:3d} at {coords}{prereq_str}")
+        
+        # Calculate distances between consecutive temples
+        print(f"\nPath Distances:")
+        print("-" * 30)
+        total_distance = 0
+        for i in range(len(solution_indices) - 1):
+            from_idx, to_idx = solution_indices[i], solution_indices[i + 1]
+            distance = self.dist_matrix[from_idx, to_idx]
+            from_id, to_id = self.temple_ids[from_idx], self.temple_ids[to_idx]
+            print(f"Temple {from_id:3d} → Temple {to_id:3d}: {distance:6.0f}")
+            total_distance += distance
+        
+        print(f"\nTotal Distance: {total_distance:.0f}")
+        print(f"{'='*50}")

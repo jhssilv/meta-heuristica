@@ -2,7 +2,7 @@ import time
 from instance import Instance
 from input_parse import parse_args
 # from solver import Solver
-from super_solver import Solver
+from solver import Solver
 
 if __name__ == "__main__":
     args = parse_args()
