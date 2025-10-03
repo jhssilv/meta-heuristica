@@ -3,6 +3,8 @@ from scipy.spatial.distance import pdist, squareform
 from collections import defaultdict
 from random import randint, sample, seed as random_seed
 from copy import deepcopy
+import time
+
 
 from instance import Instance
 
@@ -274,8 +276,13 @@ class Solver:
         iter_count = 0
         max_k = len(self.neighborhoods)
 
+        start_time = time.perf_counter()
+
         # Show initial solution
-        self.print_solution_details(self.current_solution, "Initial Solution")
+        if not self.show_simplified_output:
+            self.print_solution_details(self.current_solution, "Initial Solution")
+        else:
+            print(f"Initial solution value: {self.current_solution_value:.2f}")
 
         while iter_count < max_iter:
             k = 1
@@ -291,10 +298,16 @@ class Solver:
                 if improved_value < self.current_solution_value:
                     self.current_solution = improved_solution
                     self.current_solution_value = improved_value
+
+                    # Calculate elapsed time for this improvement
+                    elapsed_time = time.perf_counter() - start_time
+
                     if self.show_simplified_output:
-                        print(f"Iter {iter_count}: Found new solution with value {self.current_solution_value:.2f}.")
+                        print(f"Iter {iter_count}: Found new solution with value {self.current_solution_value:.2f}. Elapsed Time is {elapsed_time:.2f} seconds")
                     else:
+                        print(f"Iter {iter_count}: Found new solution!")
                         self.print_solution_details(self.current_solution, "Current Solution")
+                        print(f"Elapsed Time: {elapsed_time:.2f} seconds")
                     k = 1
                     
                     if self.current_solution_value < self.best_solution_value:
@@ -305,9 +318,17 @@ class Solver:
 
             iter_count += 1
         
+        # Final time and summary
+        total_time = time.perf_counter() - start_time
+
+        if not self.show_simplified_output:
+            self.print_solution_details(self.best_solution, "Final Best Solution")
+
         final_solution_ids = [self.temple_ids[i] for i in self.best_solution]
-        print(f"\nFinished. Best solution value: {self.best_solution_value:.2f}")
-        self.print_solution_details(self.best_solution, "Final Best Solution")
+        print(f"\nVNS completed in {total_time:.2f} seconds after {max_iter} iterations")
+        print(f"Best solution value: {self.best_solution_value:.2f}")
+        
+        
     
     ################################
     #   First Solution Generation  #
