@@ -1,14 +1,19 @@
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from collections import defaultdict
-from random import randint, sample
+from random import randint, sample, seed as random_seed
 from copy import deepcopy
 
 from instance import Instance
 
 class Solver:
-    def __init__(self, instance: Instance):
+    def __init__(self, instance: Instance, seed: int = None):
         self.instance = instance
+        self.seed = seed
+
+        if seed is not None:
+            random_seed(seed)
+            np.random.seed(seed)
 
         self.temple_ids = np.array(sorted(self.instance.temples.keys()))
         self.temple_id_to_idx = {temple_id: i for i, temple_id in enumerate(self.temple_ids)}
