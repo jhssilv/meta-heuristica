@@ -10,4 +10,6 @@ def parse_args():
                         help="Max iterations")
     parser.add_argument("seed_or_param", type=int,
                         help="Random seed")
+    parser.add_argument("--simplified", action="store_true",
+                        help="Show simplified output")
     return parser.parse_args()

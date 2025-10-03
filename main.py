@@ -10,12 +10,13 @@ if __name__ == "__main__":
     
     max_iter = args.stopping_value
     seed = args.seed_or_param
+    simplified = args.simplified
 
     random.seed(seed)
-    np.random.seed
-    
+    np.random.seed(seed)
+
     instance = Instance(args.input_file)
-    solver = Solver(instance)
+    solver = Solver(instance, seed=seed, show_simplified_output=simplified)
     
     print(f"Using seed: {seed}")
 

@@ -7,9 +7,10 @@ from copy import deepcopy
 from instance import Instance
 
 class Solver:
-    def __init__(self, instance: Instance, seed: int = None):
+    def __init__(self, instance: Instance, seed: int = None, show_simplified_output: bool = False):
         self.instance = instance
         self.seed = seed
+        self.show_simplified_output = show_simplified_output
 
         if seed is not None:
             random_seed(seed)
@@ -290,7 +291,10 @@ class Solver:
                 if improved_value < self.current_solution_value:
                     self.current_solution = improved_solution
                     self.current_solution_value = improved_value
-                    print(f"Iter {iter_count}: Found new solution with value {self.current_solution_value:.2f}.")
+                    if self.show_simplified_output:
+                        print(f"Iter {iter_count}: Found new solution with value {self.current_solution_value:.2f}.")
+                    else:
+                        self.print_solution_details(self.current_solution, "Current Solution")
                     k = 1
                     
                     if self.current_solution_value < self.best_solution_value:
